@@ -1,11 +1,12 @@
 import {NextResponse} from "next/server";
 import {auth} from "@/lib/auth";
 
-// Proxy нужен только для удобного перенаправления. Реальные права
-// дополнительно проверяются в Server Functions и Route Handlers.
+// Proxy используется для удобного редиректа. Доступ к данным и мутациям
+// независимо от Proxy проверяются на сервере.
 export default auth((request)=>{
  const path=request.nextUrl.pathname;
- if(!request.auth&&(path==="/products/new"||/^\/products\/\d+\/edit$/.test(path))){
+ const isAuthenticated=Boolean(request.auth?.user);
+ if(!isAuthenticated&&(path==="/products/new"||/^\/products\/\d+\/edit$/.test(path))){
   return NextResponse.redirect(new URL("/login",request.url));
  }
  return NextResponse.next();
