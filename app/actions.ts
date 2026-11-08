@@ -1,42 +1,31 @@
 "use server";
-import { revalidatePath, updateTag } from "next/cache";
-import { addProduct, editProduct, removeProduct } from "@/lib/dummyjson";
-import type { Product, ProductInput } from "@/lib/types";
-
-function validateProduct(input: ProductInput): ProductInput {
-  if (!input || typeof input.title !== "string" || !input.title.trim()) throw new Error("Укажите название товара.");
-  if (!Number.isFinite(input.price) || input.price <= 0) throw new Error("Цена должна быть больше нуля.");
-  if (!Number.isFinite(input.stock) || input.stock < 0) throw new Error("Остаток не может быть отрицательным.");
-  if (!Number.isFinite(input.discountPercentage) || input.discountPercentage < 0 || input.discountPercentage > 100) {
-    throw new Error("Скидка должна быть от 0 до 100 процентов.");
-  }
-  return {
-    title: input.title.trim(), description: String(input.description ?? "").trim(),
-    category: String(input.category ?? "beauty"), price: input.price,
-    discountPercentage: input.discountPercentage, stock: input.stock,
-    brand: String(input.brand ?? "").trim(), thumbnail: String(input.thumbnail ?? "").trim(),
-  };
+import {revalidatePath,updateTag} from "next/cache";
+import {addProduct,editProduct,removeProduct} from "@/lib/dummyjson";
+import {createProductSchema,updateProductSchema} from "@/lib/schemas/product";
+import {requireRole,requireUser} from "@/lib/access";
+import type {Product} from "@/lib/types";
+export type ActionResult<T>={success:true;data:T}|{success:false;error:string;fieldErrors?:Record<string,string[]>};
+function validationError(error:{issues:Array<{path:PropertyKey[];message:string}>}):ActionResult<never>{
+ const fieldErrors:Record<string,string[]>={};for(const issue of error.issues){const key=String(issue.path[0]??"form");(fieldErrors[key]??=[]).push(issue.message);}
+ return {success:false,error:"Проверьте правильность заполнения формы.",fieldErrors};
 }
-
-export async function createProductAction(input: ProductInput): Promise<Product> {
-  const product = await addProduct(validateProduct(input));
-  updateTag("products");
-  revalidatePath("/");
-  return product;
+export async function createProductAction(raw:unknown):Promise<ActionResult<Product>>{
+ const user=await requireUser().catch(()=>null);if(!user)return {success:false,error:"Для добавления товара войдите в систему."};
+ const parsed=createProductSchema.safeParse(raw);if(!parsed.success)return validationError(parsed.error);
+ try{const data=await addProduct(parsed.data);updateTag("products");revalidatePath("/");return {success:true,data};}
+ catch(error){return {success:false,error:error instanceof Error?error.message:"Не удалось добавить товар."};}
 }
-export async function updateProductAction(id: number, input: ProductInput): Promise<Product> {
-  if (!Number.isInteger(id) || id < 1) throw new Error("Некорректный id товара.");
-  const product = await editProduct(id, validateProduct(input));
-  updateTag("products");
-  revalidatePath("/");
-  revalidatePath(`/products/${id}`);
-  return product;
+export async function updateProductAction(id:number,raw:unknown):Promise<ActionResult<Product>>{
+ const user=await requireUser().catch(()=>null);if(!user)return {success:false,error:"Для изменения товара войдите в систему."};
+ if(!Number.isInteger(id)||id<1)return {success:false,error:"Некорректный идентификатор товара."};
+ const parsed=updateProductSchema.safeParse(raw);if(!parsed.success)return validationError(parsed.error);
+ try{const data=await editProduct(id,parsed.data);updateTag("products");revalidatePath("/");revalidatePath(`/products/${id}`);return {success:true,data};}
+ catch(error){return {success:false,error:error instanceof Error?error.message:"Не удалось изменить товар."};}
 }
-export async function deleteProductAction(id: number): Promise<Product> {
-  if (!Number.isInteger(id) || id < 1) throw new Error("Некорректный id товара.");
-  const product = await removeProduct(id);
-  updateTag("products");
-  revalidatePath("/");
-  revalidatePath(`/products/${id}`);
-  return product;
+export async function deleteProductAction(id:number):Promise<ActionResult<Product>>{
+ const access=await requireRole("admin").then(user=>({user})).catch(error=>({error}));
+ if("error"in access){const message=access.error instanceof Error&&access.error.message==="UNAUTHENTICATED"?"Для удаления войдите в систему.":"Удалять товары может только администратор.";return {success:false,error:message};}
+ if(!Number.isInteger(id)||id<1)return {success:false,error:"Некорректный идентификатор товара."};
+ try{const data=await removeProduct(id);updateTag("products");revalidatePath("/");revalidatePath(`/products/${id}`);return {success:true,data};}
+ catch(error){return {success:false,error:error instanceof Error?error.message:"Не удалось удалить товар."};}
 }
