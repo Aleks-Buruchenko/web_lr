@@ -1,32 +1,32 @@
 # Лабораторная работа №3 — Каталог товаров
 Продолжение ЛР2. Products (вариант 2), Next.js App Router, TypeScript, DummyJSON.
 
-## Возможности
+## Реализовано
 - Zod-схемы создания и редактирования; повторная серверная валидация.
-- Auth.js Credentials: вход, выход, JWT-сессия в защищённой cookie.
-- Роли user (просмотр, создание, изменение) и admin (все права плюс удаление).
-- Проверка прав в Server Functions; DELETE Route Handler защищён сессией и ролью.
+- Auth.js Credentials: вход, выход, JWT-сессия в cookie.
+- Роли user (просмотр, создание, изменение) и admin (включая удаление).
+- Проверка доступа в Server Functions; DELETE Route Handler проверяет сессию и роль.
 - Компонентные тесты Vitest, React Testing Library и user-event.
-- Покрытие: npm run coverage.
+- Coverage: npm run coverage.
 
 ## Демо-аккаунты
-user@example.com / user123 — пользователь.
-admin@example.com / admin123 — администратор.
-Это демонстрационные учётные записи для лабораторной. Для production используйте БД и хеши паролей, а не пароли в исходном коде.
+user@example.com / user123 — user.
+admin@example.com / admin123 — admin.
+Это учебные аккаунты. Для production необходима БД и безопасное хеширование паролей вместо паролей в исходном коде.
 
 ## .env.local
 AUTH_SECRET=длинный-случайный-секрет
 AUTH_URL=http://localhost:3000
-Секрет можно получить командой npx auth secret.
+Секрет сгенерировать: npx auth secret.
 
-## Запуск и проверка
+## Запуск
 npm install
 npm run dev
 npm test
 npm run coverage
 npm run build
-HTML-отчёт покрытия: coverage/index.html.
+HTML-отчёт: coverage/index.html.
 
-## Правила валидации
+## Предметные правила
 Название не короче 3 символов; цена больше нуля; скидка 0–100%; остаток — целое неотрицательное число; URL изображения корректен.
-DummyJSON имитирует мутации без постоянного хранения. Изменения доступны в Zustand до перезагрузки.
+DummyJSON имитирует мутации без постоянного сохранения. Изменения отображаются в Zustand до перезагрузки.
