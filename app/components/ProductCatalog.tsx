@@ -25,6 +25,8 @@ export function ProductCatalog({ categories }: Props) {
   const [sortValue, setSortValue] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingList, setLoadingList] = useState(false);
+  const [nextSkip, setNextSkip] = useState(PAGE_SIZE);
   const [pageError, setPageError] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -44,8 +46,9 @@ export function ProductCatalog({ categories }: Props) {
     if (isAppend) setLoadingMore(true);
     else setRefreshing(products.length > 0);
     setPageError("");
+    setLoadingList(true);
 
-    const params = new URLSearchParams({ limit: String(PAGE_SIZE), skip: String(isAppend ? products.length : 0) });
+    const params = new URLSearchParams({ limit: String(PAGE_SIZE), skip: String(isAppend ? nextSkip : 0) });
     if (activeQuery.trim()) params.set("q", activeQuery.trim());
     else if (activeCategory) params.set("category", activeCategory);
     if (sortBy) { params.set("sortBy", sortBy); params.set("order", order); }
@@ -58,11 +61,13 @@ export function ProductCatalog({ categories }: Props) {
       }
       if (isAppend) append(payload.products, payload.total);
       else replace(payload.products, payload.total);
+      setNextSkip(payload.skip + payload.products.length);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "Не удалось загрузить товары.");
     } finally {
       setRefreshing(false);
       setLoadingMore(false);
+      setLoadingList(false);
     }
   }
 
@@ -112,7 +117,7 @@ export function ProductCatalog({ categories }: Props) {
     } finally { setMutationPending(false); }
   }
 
-  const hasMore = products.length < total;
+  const hasMore = nextSkip < total;
   return <section className="catalog">
     <header className="page-heading">
       <div><span className="eyebrow">ВАРИАНТ 2 · PRODUCTS</span>
@@ -148,7 +153,7 @@ export function ProductCatalog({ categories }: Props) {
       {pageError && <div className="error-banner" role="alert"><span>{pageError}</span>
         <button className="button button-secondary small-button" type="button" onClick={() => void loadProducts("replace")}>Повторить</button></div>}
 
-      {products.length === 0 && !refreshing && !pageError ? <div className="empty-state">
+      {products.length === 0 && !loadingList && !pageError ? <div className="empty-state">
         <div className="empty-emoji">📦</div><h3>Ничего не найдено</h3>
         <p>Попробуйте изменить запрос или выбрать другую категорию.</p>
         <button className="button button-secondary" type="button" onClick={() => {
@@ -158,10 +163,10 @@ export function ProductCatalog({ categories }: Props) {
         {products.map((product) => <ProductCard key={product.id} product={product} onEdit={openEdit} onDelete={setDeleting} />)}
       </div>}
 
-      {refreshing && products.length === 0 && <div className="inline-loading"><LoaderCircle className="spin" />Загружаем товары…</div>}
+      {loadingList && products.length === 0 && <div className="inline-loading"><LoaderCircle className="spin" />Загружаем товары…</div>}
       <footer className="catalog-footer"><span>Показано <strong>{products.length}</strong> из <strong>{total}</strong> товаров</span><span>Источник данных: DummyJSON</span></footer>
       {hasMore && <div className="load-more-wrap">
-        <button className="button button-secondary load-more" type="button" disabled={loadingMore || refreshing} onClick={() => void loadProducts("append")}>
+        <button className="button button-secondary load-more" type="button" disabled={loadingMore || refreshing || loadingList} onClick={() => void loadProducts("append")}>
           {loadingMore ? <><LoaderCircle size={16} className="spin" />Загрузка…</> : "Загрузить ещё"}
         </button>
       </div>}
