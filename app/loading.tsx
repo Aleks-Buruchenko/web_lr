@@ -1,0 +1,8 @@
+export default function Loading() {
+  return <main className="page-shell">
+    <div className="loading-heading"><div className="skeleton skeleton-label" /><div className="skeleton skeleton-title" /><div className="skeleton skeleton-subtitle" /></div>
+    <div className="skeleton-toolbar"><div className="skeleton skeleton-search" /><div className="skeleton skeleton-filter" /><div className="skeleton skeleton-filter" /></div>
+    <div className="skeleton-grid">{Array.from({ length: 8 }, (_, index) =>
+      <div className="skeleton-card" key={index}><div className="skeleton skeleton-image" /><div className="skeleton skeleton-line" /><div className="skeleton skeleton-line short" /></div>)}</div>
+  </main>;
+}

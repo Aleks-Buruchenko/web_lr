@@ -1,0 +1,17 @@
+name: Next.js build
+on:
+  push:
+    branches: [lab2-nextjs]
+  pull_request:
+    branches: [lab2-nextjs]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npm run build
