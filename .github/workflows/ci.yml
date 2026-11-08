@@ -1,16 +1,22 @@
-name: Next.js build
+name: Next.js checks
 on:
   push:
-    branches: [lab2-nextjs]
+    branches: [lab2-nextjs, lab3-auth-validation-tests]
   pull_request:
-    branches: [lab2-nextjs]
+    branches: [lab2-nextjs, lab3-auth-validation-tests]
 jobs:
-  build:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - run: npm install
+      - run: npm test
+      - run: npm run coverage
       - run: npm run build
+        env:
+          AUTH_SECRET: ci-only-test-secret-not-for-production
+          AUTH_URL: http://localhost:3000

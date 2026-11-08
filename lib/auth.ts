@@ -1,6 +1,7 @@
+import "server-only";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { loginSchema } from "@/lib/schemas/auth";
+import {loginSchema} from "@/lib/schemas/auth";
 
 // Демо-учётные записи для лабораторной. Для production нужны БД и хеширование паролей.
 const demoUsers=[
